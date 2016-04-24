@@ -1,28 +1,32 @@
 /*global p5 */
 var s = function (p) {
     'use strict';
-	var song, fft, mic, input = "mic";
+	var song, fft, mic, button, input = "mic";	
 	p.preload = function () {
-		song = p.loadSound('Alan.mp3');
+		//song = p.loadSound('Alan.mp3');
 	};
 
 	p.setup = function () {
 		p.createCanvas(p.windowWidth, p.windowHeight);
+		button = p.createButton('Input');
+		button.position(p.windowWidth - 100, 19);
+		button.mousePressed(p.changeInput);
 		
 		if (input === "song") {
 			song.play();
-			fft = new p5.FFT();
+			fft = new p5.FFT();	
 			fft.setInput(song);
 		} else if (input === "mic") {
 			mic = new p5.AudioIn();
 			mic.start();
-			fft = new p5.FFT();
+			fft = new p5.FFT();	
 			fft.setInput(mic);
 		}
 	};
 	p.windowResized = function () {
 		p.resizeCanvas(p.windowWidth, p.windowHeight);
 	};
+
 
 	p.draw = function () {
 		var radAxis;
@@ -32,13 +36,14 @@ var s = function (p) {
 		} else {
 			radAxis = 2 * p.windowWidth / 3;
 		}
-		var i,
+
+		var 	i,
 			waveform = fft.waveform(),
 			spectrum = fft.analyze(),
 			C1r = p.map(fft.getEnergy("bass", "lowMid"), 0, 255, 0, radAxis),
 			C2r = p.map(fft.getEnergy("mid"), 0, 255, 0, radAxis),
 			C3r = p.map(fft.getEnergy("treble"), 0, 255, 0, radAxis);
-		
+
 		p.noFill();
 		p.beginShape();
 		p.stroke(200, 255, 51); // waveform is yellow
@@ -48,8 +53,9 @@ var s = function (p) {
 			var y =  (0.5 * p.windowHeight) + p.map(waveform[i], -1, +1, p.height / 4, -p.height / 4);
 			p.curveVertex(x, y);
 		}
+
 		p.endShape();
-				
+
 		p.stroke(255); // waveform is yellow
 		p.strokeWeight(1);
 		
@@ -59,6 +65,18 @@ var s = function (p) {
 		p.ellipse(p.width / 2, p.height / 2, C2r, C2r);
 		p.fill('#f9ba44');
 		p.ellipse(p.width / 2, p.height / 2, C3r, C3r);
+
+	};
+	p.changeInput = function () {
+		if (input === "song") {
+			input = "mic";
+			song.stop();
+			p.setup();
+			
+		} else if (input === "mic") {
+			input = "song";
+			p.setup();
+		}
 
 	};
 };
