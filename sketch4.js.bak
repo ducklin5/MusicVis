@@ -1,11 +1,10 @@
 //define variables
-var mic, fft, omega, alpha, q = 0, supremeSet = [];
-
+var mic, fft, omega, alpha, q = 0, supremeSet, bg, starfield, frame = 0;
 //setup stuff
 setup = function () {
 	//create 3D cnavas
 	createCanvas(windowWidth, windowHeight, WEBGL);
-	frameRate(10);
+	//frameRate(10);
 	// create the Input device
 	mic = new p5.AudioIn();
 	//create a filter to remove noise
@@ -15,84 +14,84 @@ setup = function () {
 	// disconnect unfiltered noise,
 	mic.disconnect();
 	// and connect to filter
-	mic.connect();
+	mic.connect(filter);
 	mic.start();
 	// Create the fft variable and set the input
 	fft = new p5.FFT(0.1, 8192);
-	fft.setInput();
+	fft.setInput(filter);
 	
-	supremeSet[0] = new omegaSet(box);
-	supremeSet[1] = new omegaSet(box);
+	supremeSet = new omegaSet(box);
+	starfield = new ParticleSystem(createVector(0,0,0));
 	
 }
 draw = function () {
 	//Set the filter to bandpass to remove 
 	filter.setType('bandpass');
 	//filter.freq(40);
-	filter.res(20);
+	filter.res(60);
 	fft.analyze();
-	
-	q += 0.1;
-	
-	background(100);
-	push();
-	//rotateY(map(mouseX,0,width,-TWO_PI,TWO_PI));
-	//rotateX(map(mouseY,0,height,-TWO_PI,TWO_PI));
-	
-	
-	rotateY(PI/4);
-	//rotateX(-PI/8);
-	translate(-250,0,100);
-	
-	
-	//rotateX(PI/6);
-	
 	colorMode(HSB,255);
 	
+	
+	q += 0.3;	
+	for(var i = 500; i <= 1000; i+= 15){
+		q += map(fft.getEnergy(i,i + 15),0,map(i,500,1000,50,20),0,map(i,500,1000,0,0.5));
+	}
+	
+	background(255);
+	push();
+	
+	//rotateY(map(mouseX,0,width,-TWO_PI,TWO_PI));
+	//rotateX(map(mouseY,0,height,-TWO_PI,TWO_PI));
+	rotateY(PI/4);
+	
+	starfield.origin = createVector(1000,random(-height,height),random(-height/1.5,1000));
+	starfield.shape = cylinder;
+	starfield.color = [random(0,255),115,180];
+	starfield.size = 2;
+	starfield.lifespan = 200;
+	starfield.accelaration = createVector(-10,0,0);
+	starfield.velocity= createVector(-10,0,0);
+	starfield.genSpeed = 1;
+	frame ++;
+	
+	if (frame % 1 == 0){
+		starfield.run();
+	} else {
+		starfield.draw();
+	}
+	
+	translate(-windowHeight/20,0,random(-0.5,0.5)* width * fft.getEnergy('bass') / 1000 + windowHeight/12);
+	
+	
+
+	
 	//define lighting
-	directionalLight(255, 0, 255, 1, 0, -0.5);
-	directionalLight(0, 0, 255, 0, -0.2, 1);
-	directionalLight(0, 0, 255, -1, -0.2, 1);
+	directionalLight(0, 0, 200, -1, 0.4, 1);
+	directionalLight(0, 0, 200, 1, 0.4, 1);
+	//directionalLight(0, 0, 255, -1, -0.2, 1);
 	//draw box in the center to show origin
-	specularMaterial((q*2)%255,180,100);
+	basicMaterial((q)%255,80,25);
 	
-	translate(0,0,-windowHeight);
-	plane(windowHeight * 3,windowHeight);
-	translate(0,0,windowHeight );
+	box(1000);
 	
-	specularMaterial((q*2)%255,180,100);
+	translate(-windowHeight/4, 0, 0);
+	supremeSet.draw();
+	translate(windowHeight/4, 0, 0);
 	
-	translate(0, windowHeight, 0);
-	rotateX(0.5*PI);
-	plane(windowHeight*3,windowHeight);
-	rotateX(-0.5*PI);
-	translate(0, -windowHeight, 0);	
-	
-	specularMaterial(65,50,130);
-	
-	translate(windowHeight, 0, 400);
-	rotateY(0.5*PI);
-	plane(windowHeight,windowHeight);
-	rotateY(-0.5*PI);
-	translate(-windowHeight, 0, -400);
-	
-	translate(0, 0, -windowHeight );
+	translate(windowHeight/4, 0, 0);
 	scale(-1,1,1);
-	supremeSet[0].draw();
+	supremeSet.draw();
 	scale(-1,1,1);
-	translate(0, 0, windowHeight);
-	
-	translate(1000, 0, -windowHeight );
-	supremeSet[1].draw();
-	translate(-1000, 0,windowHeight);
+	translate(-windowHeight/4, 0, 0);
 
 	
 }
-var Spectrum = function (x, y, z, min = 0, max = 135, inc = 5) {
+var Spectrum = function (x, y, z, min = 0, max = 135, inc = 10) {
 	this.min = min;
 	this.max = max;
 	this.increment = inc;
-	this.width = windowHeight;
+	this.width = windowWidth/2;
 	this.centerPos = createVector(x,y,z);
 	this.shape = sphere;
 	this.color = 'rainbow';
@@ -100,7 +99,8 @@ var Spectrum = function (x, y, z, min = 0, max = 135, inc = 5) {
 	this.spiralAngle = 0;
 	this.addShape = function () {};
 	this.objectArray = [];
-	//this.partSys = new ParticleSystem(createVector(0,0,0));
+	this.partSys = new ParticleSystem(createVector(0,0,0));
+	this.partSys.genSpeed = 'music';
 	var dArray = [0,0,0,0,0,0,0];
 	var D = 0;
 
@@ -120,8 +120,8 @@ var Spectrum = function (x, y, z, min = 0, max = 135, inc = 5) {
 			translate(pos.x + this.centerPos.x, this.centerPos.y, this.centerPos.z);
 			
 			if (this.style == 'spiral'){
-				var gamma = map(i, min, max, 0, TWO_PI*0.5) + this.spiralAngle;
-				var d = map(fft.getEnergy(i),0,255,50,125);
+				var gamma = map(i, min, max, 0, PI) + this.spiralAngle;
+				var d = map(fft.getEnergy(i),0,255,30,100);
 				dArray[6] = dArray[5];
 				dArray[5] = dArray[4];
 				dArray[4] = dArray[3];
@@ -134,8 +134,9 @@ var Spectrum = function (x, y, z, min = 0, max = 135, inc = 5) {
 			}
 
 			this.objectArray[i].draw();
-			if (i == inc * floor((max-min)/inc) + min){
-				//this.partSys.run();
+			//if (i == inc * floor((max-min)/inc) + min){
+			if (i == min){
+				this.partSys.run();
 			}
 			
 			if (this.style == 'spiral'){ 
@@ -180,56 +181,57 @@ var SpectrumObject = function (shape, origin,min,max, freq, hue) {
 }
 
 var omegaSet = function (shape){
-	this.mode = 'star';
+	this.mode = 'spiral';
 	this.omegaArray = [];
-	var spectrumNo = 24;
+	var spectrumNo = 4;
 	for(var i = 1; i <= spectrumNo; i ++ ){
 		var theta = i * TWO_PI/spectrumNo; 
 		this.omegaArray[i] = new Spectrum(0, 0, 0, 20, 135 , 6);
 		this.omegaArray[i].shape = shape;
-		this.omegaArray[i].style = 'linear';
-		this.omegaArray[i].width = windowHeight;
+		this.omegaArray[i].style = 'spiral';
+		this.omegaArray[i].width = windowWidth/2;
 		this.omegaArray[i].spiralAngle = theta;
 	}		
 	this.draw = function () {
 		for(var i = 1; i <= spectrumNo; i ++ ){
-			rotateZ(q/4);
-			if(this.mode = "star"){
+			rotateX(q/4);
+			if(this.mode == "star"){
 				rotateZ(i*TWO_PI/spectrumNo + PI/2);
 				translate(-this.omegaArray[i].width/2,0,0);
 			}
 			this.omegaArray[i].draw();
-			if(this.mode = "star"){
+			if(this.mode == "star"){
 				translate(this.omegaArray[i].width/2,0,0);
 				rotateZ(-(i*TWO_PI/spectrumNo + PI/2));
 			}
-			rotateZ(-q/4);
+			rotateX(-q/4);
 		}
 	}		
 }
-var Particle = function (origin) {
-	this.shape = sphere;
-	this.size = 2;
-	this.color = [255,0,255,this.lifespan];
-	this.lifespan = 200;
+var Particle = function (origin,shape,size,color,lifespan,accelaration,velocity) {
+	this.shape = shape;
+	this.size = size;
+	this.color = color;
+	this.lifespan = lifespan;
 	this.position = origin.copy();
-	this.accelaration = createVector(0.5,random(0,0),random(0,0));
-	this.velocity= createVector(10,0);
+	this.accelaration = accelaration.copy();
+	this.velocity= velocity.copy();
 	this.update = function () {
 		this.lifespan -= 5;
 		this.velocity.add(this.accelaration);
 		this.position.add(this.velocity);
 	}
 	this.draw = function () {
-		basicMaterial(this.color[0],this.color[1],this.color[2],255);
+		basicMaterial(this.color[0],this.color[1],this.color[2]);
 		translate(this.position.x,this.position.y,this.position.z);
+		rotateZ(PI/2);
 		this.shape(this.size);
+		rotateZ(-PI/2);
 		translate(-this.position.x,-this.position.y,-this.position.z);
 	}
 	this.isDead = function () {
 		if (this.lifespan <= 0) {
 			return true;
-			console.log(true);
 		} else {
 			return false;
 		}
@@ -240,11 +242,33 @@ var Particle = function (origin) {
 	} 
 }
 var ParticleSystem = function (origin) {
+	this.shape = sphere;
+	this.size = 2;
+	this.color = [255,0,255];
+	this.lifespan = 500;
+	this.accelaration = createVector(-1,0,0);
+	this.velocity= createVector(-2,0,0);
 	this.origin = origin.copy();
 	this.particles = [];
+	this.genSpeed = 'music';
 	this.addParticle = function(){
-		for (var i = 1; i <= fft.getEnergy("bass") * 5/255; i++) {
-			this.particles.push(new Particle(this.origin));
+		var limit;
+		if(this.genSpeed == 'music'){
+			limit = fft.getEnergy(60,100) * 5/255;
+		} else {
+			limit = this.genSpeed;
+		}
+		for (var i = 1; i <= limit; i++) {
+			this.particles.push(new Particle(this.origin, this.shape,this.size,this.color,this.lifespan,this.accelaration,this.velocity));
+		}
+	}
+	this.draw = function () {
+		for (i = 0; i < this.particles.length; i++){
+			if(this.particles[i].isDead()){
+				this.particles.slice(i,1);
+			} else {
+				this.particles[i].run();
+			}
 		}
 	}
 	this.run = function(){
