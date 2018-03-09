@@ -1,6 +1,6 @@
 /*global p5 */
 
-var bg0, logo, mic, fft, filter, amplitude,
+var bg0, logo, mic, fft, audioFilter, amplitude,
 	system,
 	spectrum, primary, secondary, tertiary, quaternary,
 	logoComp, logoCnv,
@@ -22,20 +22,20 @@ setup = function () {
 	settings.height = height;
 
 	//create a new filter
-	filter = new p5.Filter();
+	audioFilter = new p5.BandPass();
 	//create a microphone input, disconnect unfiltered sound, and connect to filter, then start mic
 	mic = new p5.AudioIn();
 	mic.disconnect();
-	mic.connect(filter);
+	mic.connect(audioFilter);
 	mic.start();
 
 	//fourier font transform the filtered sound
-	fft = new p5.FFT(0.5, 8192);
-	fft.setInput(filter);
+	fft = new p5.FFT(0.4, 8192);
+	fft.setInput(audioFilter);
 
 	//get overall volume
 	amplitude = new p5.Amplitude();
-	amplitude.setInput(filter);
+	amplitude.setInput(audioFilter);
 
 	//call all composites
 	bg = mirrorBg(bg0);
@@ -44,11 +44,11 @@ setup = function () {
 
 	//initialize spectrum and particle
 
-	primary = new polarSpectrum(15, 150, 10, PI-0.1, 0.2 * height - 10, 0.35 * height);
+	primary = new polarSpectrum(30, 300, 18, PI-0.1, 0.175 * height , 0.4 * height);
 	primary.color = ["rainbow", 0.3, 1];
 	primary.thickness = 2;
-	primary.style = 'curve';
-	primary.color = [0.6, 0.3, 1];
+	primary.style = 'line';
+	primary.color = [0.6, 0.4, 1];
 
 	/*secondary = new polarSpectrum(25, 150, 15, PI, 0.2 * height - 10, 0.4 * height);
 	secondary.color = ["rainbow", 0.6, 0.9];
@@ -74,9 +74,9 @@ draw = function () {
 	push();
 
 	//filter
-	filter.setType('bandpass');
-	//filter.freq(40);
-	filter.res(10);
+	//audioFilter.setType('bandpass');
+	audioFilter.freq(150);
+	audioFilter.res(10);
 
 	//Set background
 	background(bg.get());
@@ -202,7 +202,7 @@ polarSpectrum.prototype.getPoints = function (xpos, ypos) {
 		y1 = r1 * sin(theta);
 
 
-		r2 = this.minRadi + map(fft.getEnergy(i - q, i + q), 0, 255, 0, this.maxRadi - this.minRadi) + 1;
+		r2 = map(fft.getEnergy(i - q, i + q), 0, 255, this.minRadi, this.maxRadi) + 1;
 		x2 = r2 * cos(theta);
 		y2 = r2 * sin(theta);
 
