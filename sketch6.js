@@ -15,12 +15,12 @@ preload = function () {
 
 setup = function () {
 	createCanvas(windowWidth, windowHeight);
-	frameRate(60);
-	
+	frameRate(120);
+
 	settings = createDiv('Settings');
 	settings.position(width-100,0);
 	settings.height = height;
-	
+
 	//create a new filter
 	filter = new p5.Filter();
 	//create a microphone input, disconnect unfiltered sound, and connect to filter, then start mic
@@ -28,7 +28,7 @@ setup = function () {
 	mic.disconnect();
 	mic.connect(filter);
 	mic.start();
-	
+
 	//fourier font transform the filtered sound
 	fft = new p5.FFT(0.5, 8192);
 	fft.setInput(filter);
@@ -41,31 +41,32 @@ setup = function () {
 	bg = mirrorBg(bg0);
 	circleComp();
 	logoComp(logo);
-	
+
 	//initialize spectrum and particle
-	
-	//primary = new polarSpectrum(25, 150, 15, PI, 0.2 * height - 10, 0.35 * height);
-	//primary.thickness = 2;
-	//primary.style = 'bars';
-	//primary.draw(width / 2, height / 2);
-	
-	//secondary = new polarSpectrum(25, 150, 15, PI, 0.2 * height - 10, 0.4 * height);
-	/*secondary.color = ["rainbow", 0.6, 0.9];
+
+	primary = new polarSpectrum(15, 150, 10, PI-0.1, 0.2 * height - 10, 0.35 * height);
+	primary.color = ["rainbow", 0.3, 1];
+	primary.thickness = 2;
+	primary.style = 'curve';
+	primary.color = [0.6, 0.3, 1];
+
+	/*secondary = new polarSpectrum(25, 150, 15, PI, 0.2 * height - 10, 0.4 * height);
+	secondary.color = ["rainbow", 0.6, 0.9];
 	secondary.thickness = 3;
-	secondary.style = 'bars';
-	tertiary.angleOffset = -0.03;*/
-	
+	secondary.style = 'curve';
+	secondary.angleOffset = -0.03;
+
 	tertiary = new polarSpectrum(25, 750, 100, PI, 0.2 * height - 10, 0.45 * height);
 	tertiary.color = ["rainbow", 1, 0.85];
 	tertiary.thickness = 5;
 	tertiary.angleOffset = -0.06;
 	tertiary.style = 'bars';
-	
-	/*quaternary = new polarSpectrum(25, 150, 15, PI, 0.2 * height - 10, 0.5 * height);
+
+	quaternary = new polarSpectrum(25, 150, 15, PI, 0.2 * height - 10, 0.5 * height);
 	quaternary.color = ["rainbow", 0.85, 0.8];
 	quaternary.thickness = 0;
 	quaternary.style = 'bars';*/
-	
+
 	system = new ParticleSystem(createVector(width / 2, height / 2));
 
 };
@@ -92,19 +93,20 @@ draw = function () {
 	system.addParticle();
 	system.run();
 
+	/*
 	//==Draw 4th Spectrum==//
-	//quaternary.draw(width / 2, height / 2);
-	
+	quaternary.draw(width / 2, height / 2);
+
 
 	//==Draw 3rd Spectrum==//
 	tertiary.draw(width / 2, height / 2);
 
 
 	//==Draw 2nd Spectrum==//
-	//secondary.draw(width / 2, height / 2);
-
+	secondary.draw(width / 2, height / 2);
+*/
 	//==Draw 1st Spectrum==//
-	//primary.color = ["rainbow", 0.3, 1];
+	primary.draw(width / 2, height / 2);
 
 	translate(width / 2, height / 2);
 	imageMode(CENTER);
@@ -127,12 +129,12 @@ mirrorBg = function (a) {
 	return out.get();
 };
 logoComp = function (input) {
-		logoCnv = createGraphics(0.4 * circle.height, 0.4 * circle.height);
-		logoCnv.imageMode(CENTER);
-		logoCnv.image(input, logoCnv.width / 2, logoCnv.height / 2, logoCnv.width - 30, logoCnv.width - 30);
+	logoCnv = createGraphics(0.4 * circle.height, 0.4 * circle.height);
+	logoCnv.imageMode(CENTER);
+	logoCnv.image(input, logoCnv.width / 2, logoCnv.height / 2, logoCnv.width - 30, logoCnv.width - 30);
 
-	};
-	//create the spectrum composite function
+};
+//create the spectrum composite function
 circleComp = function () {
 	//save current setting, ie stroke, strokewight, fill, etc.
 	push();
@@ -161,7 +163,7 @@ circleComp = function () {
 	circle.image(glow, circle.width / 2, circle.height / 2);
 
 	pop();
-}
+};
 var Spectrum = function (minFreq, maxFreq, increment) {
 	this.minFreq = minFreq;
 	this.maxFreq = maxFreq;
@@ -172,7 +174,7 @@ var Spectrum = function (minFreq, maxFreq, increment) {
 	this.style = 'curve';
 	this.color = ["rainbow", 1, 1];
 	this.thickness = 2;
-}
+};
 var polarSpectrum = function (minFreq, maxFreq, increment, angle, minRadi, maxRadi) {
 	Spectrum.call(this, minFreq, maxFreq, increment);
 	this.angle = angle;
@@ -182,7 +184,7 @@ var polarSpectrum = function (minFreq, maxFreq, increment, angle, minRadi, maxRa
 	this.isPolar = true;
 	this.crdnts1 = [];
 	this.crdnts2 = [];
-}
+};
 polarSpectrum.prototype = Object.create(Spectrum.prototype);
 polarSpectrum.prototype.constructor = Spectrum;
 
@@ -207,11 +209,11 @@ polarSpectrum.prototype.getPoints = function (xpos, ypos) {
 		this.crdnts1.push(createVector(x1, y1));
 		this.crdnts2.push(createVector(x2, y2));
 	}
-}
+};
 polarSpectrum.prototype.display = function (xpos, ypos) {
 	var hue, x1, y1, x2, y2, type;
 	push();
-	translate(xpos, ypos)
+	translate(xpos, ypos);
 	colorMode(HSB, 1);
 	strokeWeight(this.thickness);
 	switch (this.style) {
@@ -222,8 +224,6 @@ polarSpectrum.prototype.display = function (xpos, ypos) {
 		case 'mixed':
 			beginShape(LINES);
 			break;
-		case 'curve':
-		case 'line':
 		default:
 			beginShape();
 			break;
@@ -241,7 +241,7 @@ polarSpectrum.prototype.display = function (xpos, ypos) {
 			hue = this.color[0];
 		}
 		stroke(hue, this.color[1], this.color[2]);
-		fill(hue, this.color[1], this.color[2]);
+		fill(hue, this.color[1], 0);
 
 		switch (this.style) {
 			case 'bars':
@@ -251,9 +251,6 @@ polarSpectrum.prototype.display = function (xpos, ypos) {
 			case 'curve':
 				curveVertex(x2, y2);
 				break;
-			case 'points':
-			case 'line':
-			case 'mixed':
 			default:
 				vertex(x2, y2);
 				break;
@@ -261,13 +258,13 @@ polarSpectrum.prototype.display = function (xpos, ypos) {
 
 	}
 	if (this.mirror) {
-		for (var i = this.crdnts1.length - 1; i >= 0; i--) {
-			x1 = this.crdnts1[i].x;
-			y1 = this.crdnts1[i].y;
-			x2 = this.crdnts2[i].x;
-			y2 = this.crdnts2[i].y;
+		for (var j = this.crdnts1.length - 1; j >= 0; j--) {
+			x1 = this.crdnts1[j].x;
+			y1 = this.crdnts1[j].y;
+			x2 = this.crdnts2[j].x;
+			y2 = this.crdnts2[j].y;
 			if (this.color[0] == "rainbow") {
-				hue = map(i, 0, this.crdnts1.length, 1, 0.5);
+				hue = map(j, 0, this.crdnts1.length, 1, 0.5);
 			} else {
 				hue = this.color[0];
 			}
@@ -280,9 +277,6 @@ polarSpectrum.prototype.display = function (xpos, ypos) {
 				case 'curve':
 					curveVertex(-x2, y2);
 					break;
-				case 'points':
-				case 'line':
-				case 'mixed':
 				default:
 					vertex(-x2, y2);
 					break;
@@ -295,13 +289,13 @@ polarSpectrum.prototype.display = function (xpos, ypos) {
 		endShape(CLOSE);
 	} else {
 		endShape();
-	};
+	}
 	pop();
-}
+};
 polarSpectrum.prototype.draw = function (xpos, ypos) {
 	this.getPoints(xpos, ypos);
 	this.display(xpos, ypos);
-}
+};
 
 var ParticleSystem = function (position) {
 	this.origin = position.copy();
@@ -341,7 +335,7 @@ var Particle = function (position) {
 		this.lifespan -= 4;
 	};
 	this.display = function () {
-		noStroke;
+		noStroke();
 		strokeWeight(0);
 		fill(255, (this.lifespan) / 1.5);
 		var size = map(this.lifespan, 80, 0, 0, 5);
@@ -349,7 +343,7 @@ var Particle = function (position) {
 
 		ellipse(this.position.x, this.position.y, 5 + size, 5 + size);
 
-		ellipse(width - this.position.x, this.position.y, 5 + size, 5 + size)
+		ellipse(width - this.position.x, this.position.y, 5 + size, 5 + size);
 
 	};
 	this.isDead = function () {
